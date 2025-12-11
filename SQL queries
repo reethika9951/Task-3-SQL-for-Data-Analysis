@@ -1,0 +1,83 @@
+SELECT * FROM olist_customers_dataset;
+-- 1. SELECT with WHERE
+SELECT customer_id, customer_city, customer_state
+FROM olist_customers_dataset
+WHERE customer_state = 'SP';
+-- 2. ORDER BY 
+SELECT customer_id, customer_city, customer_zip_code_prefix
+FROM olist_customers_dataset
+ORDER BY customer_zip_code_prefix ASC
+LIMIT 20;
+-- 3. GROUP BY 
+SELECT customer_state, COUNT(*) AS customer_count
+FROM olist_customers_dataset
+GROUP BY customer_state
+ORDER BY customer_count DESC;
+--Subqueries
+SELECT customer_unique_id
+FROM olist_customers_dataset
+GROUP BY customer_unique_id
+HAVING COUNT(*) > 1;
+--subquery in WHERE
+SELECT *
+FROM olist_customers_dataset
+WHERE customer_unique_id IN (
+    SELECT customer_unique_id
+    FROM olist_customers_dataset
+    GROUP BY customer_unique_id
+    HAVING COUNT(*) > 1
+);
+--Aggregate functions (SUM, AVG)
+--sum
+SELECT customer_state, SUM(customer_zip_code_prefix) AS total_zip_sum
+FROM olist_customers_dataset
+GROUP BY customer_state
+ORDER BY total_zip_sum DESC;
+--AVG
+SELECT customer_state, AVG(customer_zip_code_prefix) AS avg_zip
+FROM olist_customers_dataset
+GROUP BY customer_state
+ORDER BY avg_zip DESC;
+--Create Views
+CREATE VIEW customers_per_city AS
+SELECT customer_state, COUNT(*) AS customer_count
+FROM olist_customers_dataset
+
+---Optimize with Indexes
+CREATE INDEX IF NOT EXISTS idx_customers_state
+ON olist_customers_dataset(customer_state);
+
+CREATE INDEX IF NOT EXISTS idx_customers_uniqueid
+ON olist_customers_dataset(customer_unique_id);
+
+CREATE INDEX IF NOT EXISTS idx_orders_customer
+ON olist_customers_dataset(customer_id);
+--orders table (for JOIN)
+DROP TABLE IF EXISTS orders;
+
+CREATE TABLE orders (
+  order_id TEXT PRIMARY KEY,
+  customer_id TEXT,
+  order_value REAL
+);
+
+INSERT INTO orders VALUES
+('o1', 'c1', 120.00),
+('o2', 'c2', 75.50),
+('o3', 'c1', 50.00),
+('o4', 'c3', 200.00);
+--INNER JOIN
+SELECT c.customer_id, c.customer_city, o.order_id, o.order_value
+FROM olist_customers_dataset c
+INNER JOIN orders o
+  ON c.customer_id = o.customer_id;
+ --LEFT JOIN
+ SELECT c.customer_id, c.customer_city, o.order_id, o.order_value
+FROM olist_customers_dataset c
+LEFT JOIN orders o
+  ON c.customer_id = o.customer_id;
+ --RIGHT JOIN
+ SELECT c.customer_id, c.customer_city, o.order_id, o.order_value
+FROM olist_customers_dataset c
+RIGHT JOIN orders o
+  ON c.customer_id = o.customer_id;
